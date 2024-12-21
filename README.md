@@ -18,7 +18,7 @@
 
 # Installation
 
-Clone the repository from <https://github.com/BjoB/gros>. After this you can install the package via pip in your choosen environment:
+Clone the repository and install the package via pip in your choosen environment:
 
 ```sh
 pip install .
