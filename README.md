@@ -6,9 +6,8 @@
 
 # Status
 
-<!--[![BjoB](https://circleci.com/gh/BjoB/gros.svg?style=shield)](https://circleci.com/gh/BjoB/gros)-->
 <!--[![PyPI Latest Release](https://img.shields.io/pypi/v/gros.svg)](https://pypi.org/project/gros/)-->
-[![BjoB](https://img.shields.io/circleci/build/github/BjoB/gros/master.svg?style=flat-square&logo=circleci)](https://circleci.com/gh/BjoB/gros)
+[![bytebat](https://github.com/bytebat/gros/actions/workflows/ci.yml/badge.svg)
 [![Generic badge](https://img.shields.io/badge/powered%20by-astropy-blue.svg)](https://img.shields.io/badge/powered--by-astropy-blue)
 [![Generic badge](https://img.shields.io/badge/powered%20by-plotly-blue.svg)](https://img.shields.io/badge/powered--by-plotly-blue)
 
