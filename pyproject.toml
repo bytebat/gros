@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gros"
+version = "0.1.0"
+description = "General Relativity Orbit Simulator"
+readme = { file = "README.md", content-type = "text/markdown" }
+requires-python = ">=3.10"
+dependencies = [
+	"astropy>=4.0",
+	"colorlog",
+	"numpy",
+	"pandas",
+	"rerun>=1.0.31",
+	"scipy",
+]
+authors = [
+	{ name = "Björn Barschtipan" },
+]
+license = { text = "MIT" }
+urls = { "Homepage" = "https://github.com/bytebat/gros" }
+
+[project.optional-dependencies]
+dev = [
+	"black",
+	"pycodestyle",
+	"pyflakes",
+	"pytest",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]

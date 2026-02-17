@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="doc/gros_logo.png">
+  <img src="doc/gros_logo_25dpi.png">
 </p>
 
 -----------------

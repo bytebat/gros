@@ -1,2 +1,3 @@
 /.venv/
 *.cpython-37.pyc
+src/gros.egg-info/*
