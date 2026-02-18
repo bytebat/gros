@@ -49,7 +49,7 @@ $$\large \frac{d^2 x^\mu}{d\tau^2}+\Gamma_{\alpha\beta}^{\mu}\frac{dx^\alpha}{d\
 
 # Examples
 
-Some simple simulations can be found in the [examples](https://github.com/BjoB/gros/tree/master/src/gros/examples) directory.
+Some simple simulations can be found in the [examples](https://github.com/BjoB/gros/tree/master/src/examples) directory.
 
 ## Particle on Mercury's orbit
 
