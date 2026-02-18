@@ -15,13 +15,9 @@
 
 **gros** is a python package to numerically calculate and simulate particle trajectories based on the field equations of general relativity. A user needs to define a certain metric by providing the mass of a central gravitational attractor and the start coordinates and velocity of the test particle.
 
-# Installation
+# Setup
 
-Clone the repository and install the package via pip in your choosen environment:
-
-```sh
-pip install .
-```
+The repository uses `uv` (https://docs.astral.sh/uv/) as package manager. Just clone the repo, open it in VS Code and use `uv sync`. This will setup everything needed, including a virtual environment with all dependencies installed. 
 
 # Theoretical background
 
@@ -49,20 +45,12 @@ $$\large \frac{d^2 x^\mu}{d\tau^2}+\Gamma_{\alpha\beta}^{\mu}\frac{dx^\alpha}{d\
 
 # Examples
 
-Some simple simulations can be found in the [examples](https://github.com/BjoB/gros/tree/master/src/examples) directory.
-
-## Particle on Mercury's orbit
-
-This example simulates a particle orbiting the sun with some initial orbital parameters taken from <https://nssdc.gsfc.nasa.gov/planetary/factsheet/>. After calculating the trajectory, an animation will be generated, which can be used to track the particle with a previously choosen step size.
-
-<p align="center">
-  <img src="doc/mercury_plot.png">
-</p>
+Some simple simulations can be found in the [examples](https://github.com/BjoB/gros/tree/master/src/examples) directory. To run them (or selfmade animations) you need a running `rerun` viewer (https://rerun.io/docs/overview/installing-rerun/viewer). The trajectory data's `plot` method will then automatically connect to it and log the particle trajectory accordingly.
 
 ## Earth as a black hole
 
 What if earth was a black hole? The according example shows how a particle would act in short distance of 30m. Especially the perihelion precession is visualized as a direct effect of general relativity. Additionally the gravitational time dilation can be tracked along the animation frames with τ as the proper time of the particle. t is the calculated coordinate time, which can be seen as the measured proper time of a hypothetical observer positioned infinitely far away from the gravitational center.
 
 <p align="center">
-  <img src="doc/earth_black_hole_animation_zoomed.png">
+  <img src="doc/gros_rerun.png">
 </p>
