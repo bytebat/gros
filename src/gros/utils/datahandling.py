@@ -1,7 +1,9 @@
 import math
+import os
 import numpy as np
 import pandas as pd
-import plotly.graph_objects as go
+import rerun as rr
+import subprocess
 
 from gros.utils import log, transforms as tf
 
@@ -49,220 +51,120 @@ class SpaceTimeData:
         """
         return len(self.df.index)
 
-    def plot(self, attractor_radius=0, animation_step_size=0, theme="dark"):
+    def plot(self, attractor_radius=0, animation_step_size=0):
         """
-        Plots the provided data points in a 3D scatter plot.
+        Visualizes the provided trajectory data using Rerun.
 
         Arguments:
-            attractor_radius {int} -- Adds an additional sphere with given radius [m] to the plot (default: {0})
-            animation_step_size {int} -- step size [s] > 0 will create an according animation (default: {0})
-            theme {str} -- Plotting theme (default: {"dark"})
+            attractor_radius {int} -- Adds an additional sphere with given radius [m] to the visualization (default: 0)
+            animation_step_size {int} -- step size [s] > 0 will create frames at that interval (default: 0)
         """
-        TRAJ_COLOR = "skyblue"
-        SINGULARITY_COLOR = "darkviolet"
-        BLACK_HOLE_COLOR = "darkviolet"
+        rr.init("gros", spawn=False)
 
         data = self.df
+        x = data["x"].values
+        y = data["y"].values
+        z = data["z"].values
 
-        axis_min = min([data["x"].min(), data["y"].min(), data["z"].min()])
-        axis_max = max([data["x"].max(), data["y"].max(), data["z"].max()])
-
-        x = data["x"]
-        y = data["y"]
-        z = data["z"]
-
-        # create marker for singularity
-        singularity = go.Scatter3d(
-            x=[0],
-            y=[0],
-            z=[0],
-            mode="markers",
-            marker=dict(size=1, color=SINGULARITY_COLOR),
-            text="singularity",
-            name="singularity",
-            hoverinfo="text",
-        )
-
-        # attractor sphere
-        attractor = self._create_sphere(attractor_radius, "attractor", "yellow", 0.1)
-
-        # black hole sphere at r=rs
-        black_hole = self._create_sphere(self.rs, "black hole", BLACK_HOLE_COLOR, 0.2)
-
-        # trajectory
-        traj_plot = go.Scatter3d(
-            x=x,
-            y=y,
-            z=z,
-            text="trajectory",
-            name="trajectory",
-            mode="lines",
-            line=dict(width=2, color=TRAJ_COLOR),
-        )
-
-        plot_data = [
-            go.Scatter3d(name="dummy"),
-            singularity,
-            black_hole,
-            attractor,
-            traj_plot,
-        ]
-
-        fig = go.Figure(
-            data=plot_data,
-            layout=go.Layout(
-                scene=dict(
-                    xaxis=dict(range=[axis_min, axis_max],),
-                    yaxis=dict(range=[axis_min, axis_max],),
-                    zaxis=dict(range=[axis_min, axis_max],),
-                    aspectmode="cube",
-                ),
-                title_text="Particle orbit in gravitational field",
-                hovermode="closest",
-                updatemenus=[],
+        # Log trajectory as 3D line strip
+        trajectory_points = np.column_stack((x, y, z))
+        rr.log(
+            "world/trajectory",
+            rr.LineStrips3D(
+                strips=[trajectory_points],
             ),
         )
 
-        self._add_aninmation_frames(fig, animation_step_size)
+        # Log singularity
+        rr.log(
+            "world/singularity",
+            rr.Points3D(
+                [[0, 0, 0]],
+                radii=rr.Radius.ui_points(5.0),
+                colors=[138, 43, 226],  # darkviolet
+            ),
+        )
 
-        if theme == "dark":
-            fig.update_layout(template="plotly_dark")
-        fig.show()
+        self._log_sphere(radius=self.rs, name="black_hole", color=(138, 43, 226), opacity=0.2)
 
-    def _create_sphere(self, radius, name, color, opacity):
-        sph_theta = np.linspace(0, 2 * np.pi)
-        sph_phi = np.linspace(0, 2 * np.pi)
+        if attractor_radius > 0:
+            self._log_sphere(radius=attractor_radius, name="attractor", color=(255, 255, 0), opacity=0.1)
+
+        if animation_step_size > 0:
+            self._add_rerun_animation_frames(animation_step_size)
+
+        # determine host IP in case of WSL setup
+        if "WSL_DISTRO_NAME" in os.environ:
+            host_ip = subprocess.check_output(
+                "ip route | awk '/default/ {print $3}'",
+                shell=True
+            ).decode().strip()
+
+            rr.connect_grpc(f"rerun+http://{host_ip}:9876/proxy")
+        else:
+            rr.spawn()
+
+
+    def _log_sphere(self, radius, name, color, opacity):
+        """Log a sphere mesh to Rerun.
+        
+        Arguments:
+            radius -- sphere radius
+            name -- entity name
+            color -- RGB tuple (0-255)
+            opacity -- opacity value (0.0-1.0)
+        """
+        sph_theta = np.linspace(0, 2 * np.pi, 16)
+        sph_phi = np.linspace(0, np.pi, 16)
         sph_theta, sph_phi = np.meshgrid(sph_phi, sph_theta)
 
         sph_x, sph_y, sph_z = tf.spherical_to_cartesian(radius, sph_theta, sph_phi)
 
-        sphere = go.Mesh3d(
-            x=sph_x.flatten(),
-            y=sph_y.flatten(),
-            z=sph_z.flatten(),
-            alphahull=0,
-            opacity=opacity,
-            color=color,
-            text=name,
-            name=name,
+        # Flatten for point cloud representation
+        points = np.column_stack((sph_x.flatten(), sph_y.flatten(), sph_z.flatten()))
+        
+        rr.log(
+            f"world/{name}",
+            rr.Points3D(
+                points,
+                radii=rr.Radius.ui_points(2.0),
+                colors=[*color],
+            ),
         )
 
-        return sphere
-
-    def _add_aninmation_frames(self, fig, anim_step_size):
-        """Adds animation frames with given (index) step size to the figure.
+    def _add_rerun_animation_frames(self, anim_step_size):
+        """Log animation frames at specified time intervals using Rerun.
 
         Arguments:
-            fig -- plotly figure
             anim_step_size -- animation step size [s]
         """
         if anim_step_size <= 0:
             return
 
-        # buttons
-        updatemenus_dict = {
-            # "bgcolor": "#333333",
-            "font": {"color": "#000000"},
-            "type": "buttons",
-            "buttons": [
-                {
-                    "label": "Play",
-                    "method": "animate",
-                    "args": [
-                        None,
-                        {
-                            "frame": {"duration": 500, "redraw": True},
-                            "fromcurrent": True,
-                            "transition": {
-                                "duration": 300,
-                                "easing": "quadratic-in-out",
-                            },
-                        },
-                    ],
-                },
-                {
-                    "label": "Pause",
-                    "method": "animate",
-                    "args": [
-                        [None],
-                        {
-                            "frame": {"duration": 0, "redraw": False},
-                            "mode": "immediate",
-                            "transition": {"duration": 0},
-                        },
-                    ],
-                },
-            ],
-            "showactive": False,
-        }
-
-        # animation frame traits
-        frame_step_size = math.ceil(anim_step_size / self.df["tau"].max() * self.size())
+        data = self.df
+        frame_step_size = math.ceil(anim_step_size / data["tau"].max() * self.size())
 
         if frame_step_size > self.max_num_anim_frames:
             frame_step_size = self.max_num_anim_frames
             logger.warning(
-                "'animation_step_size' is too large. \
-                    Maximium number of animation frames will be limited to {}.".format(
-                    self.max_num_anim_frames
-                )
+                f"animation_step_size is too large. "
+                f"Maximum number of animation frames will be limited to {self.max_num_anim_frames}."
             )
 
-        # sliders
-        sliders_dict = {
-            "active": 0,
-            "yanchor": "top",
-            "xanchor": "left",
-            "currentvalue": {
-                "font": {"size": 12},
-                "prefix": "tau, t:<br>",
-                "visible": True,
-                "xanchor": "right",
-            },
-            "transition": {"duration": 300, "easing": "cubic-in-out"},
-            "pad": {"b": 10, "t": 50},
-            "len": 0.9,
-            "x": 0.1,
-            "y": 0,
-            "steps": [],
-        }
-
-        # append frames and slider steps
-        anim_frames = []
+        # Log particle position at each frame
         for k in range(1, self.size(), frame_step_size):
-            current_tau = self.df["tau"][k]
-            current_t = self.df["t"][k]
+            current_tau = data["tau"][k]
+            current_t = data["t"][k]
+            time_dilation = current_t / current_tau if current_tau != 0 else 0
+            time_diff = abs(current_t - current_tau)
 
-            frame = go.Frame(
-                data=[
-                    go.Scatter3d(
-                        x=[self.df["x"][k]],
-                        y=[self.df["y"][k]],
-                        z=[self.df["z"][k]],
-                        mode="markers",
-                        marker=dict(color="red", size=3),
-                        name="particle",
-                        text="particle",
-                    )
-                ],
-                name=str(current_tau),
+            rr.set_time("tau", duration=current_tau)
+            rr.log(
+                "world/particle",
+                rr.Points3D(
+                    [[data["x"][k], data["y"][k], data["z"][k]]],
+                    radii=rr.Radius.ui_points(6.0),
+                    colors=[255, 0, 0],  # red
+                    labels=[f"tau={current_tau}s", f"t={current_t}s", f"γ={time_dilation:.6f}", f"Δt={time_diff}s"]
+                ),
             )
-            anim_frames.append(frame)
-
-            slider_step = {
-                "args": [
-                    [str(current_tau)],
-                    {
-                        "frame": {"duration": 300, "redraw": True},
-                        "mode": "immediate",
-                        "transition": {"duration": 300},
-                    },
-                ],
-                "label": "{}s<br>{}s".format(current_tau, current_t),
-                "method": "animate",
-            }
-            sliders_dict["steps"].append(slider_step)
-
-        # update figure data
-        fig.frames = anim_frames
-        fig.update_layout(updatemenus=[updatemenus_dict], sliders=[sliders_dict])
