@@ -9,7 +9,7 @@
 <!--[![PyPI Latest Release](https://img.shields.io/pypi/v/gros.svg)](https://pypi.org/project/gros/)-->
 [![bytebat](https://github.com/bytebat/gros/actions/workflows/ci.yml/badge.svg)](https://github.com/bytebat/gros/actions/workflows/ci.yml/badge.svg)
 [![Generic badge](https://img.shields.io/badge/powered%20by-astropy-blue.svg)](https://img.shields.io/badge/powered--by-astropy-blue)
-[![Generic badge](https://img.shields.io/badge/powered%20by-plotly-blue.svg)](https://img.shields.io/badge/powered--by-plotly-blue)
+[![Generic badge](https://img.shields.io/badge/powered%20by-rerun-blue.svg)](https://img.shields.io/badge/powered--by-rerun-blue)
 
 # Overview
 
