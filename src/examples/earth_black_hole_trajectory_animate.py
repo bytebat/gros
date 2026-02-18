@@ -13,7 +13,7 @@ def earth_black_hole_trajectory():
         initial_vec_v=[0, 0, 20000]
     )
 
-    traj = metric.calculate_trajectory(proptime_end=1.2e-4, step_size=1e-6)
+    traj = metric.calculate_trajectory(proptime_end=4e-4, step_size=1e-6)
     traj.plot(animation_step_size=1e-6)
 
 
